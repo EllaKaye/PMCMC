@@ -117,6 +117,8 @@ SMC <- function(N, datalength) {
   }
   return(SMC_means)
 }
+SMC(10, 15)
+
 
 library(dplyr)
 smc.df <- foreach (index_repeat = 1:nrepeats, .combine = rbind) %:%
