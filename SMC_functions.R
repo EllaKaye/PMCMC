@@ -19,7 +19,7 @@ SMC = function(N, y, dg, rf, rmu=rf){
   W = matrix(NA, T, N)
   A = matrix(NA, T, N)
   X_updated = matrix(NA, T, N)
-  
+  filtering_means <- rep(NA,T)
   # time t = 1
   xparticles <- rmu(N)
   weights <- dg(xparticles, y[1])
@@ -28,7 +28,7 @@ SMC = function(N, y, dg, rf, rmu=rf){
   W[1, ] = weights
   A[1, ] = 1:N
   X_updated[1, ] = xparticles
-  
+  filtering_means[1] <- sum(W[1, ] * X_updated[1,])
   # time t > 1
   for(t in 2:T){
     # indexes from multinomial resampling (note: no need to normalise weights here)
@@ -43,18 +43,38 @@ SMC = function(N, y, dg, rf, rmu=rf){
     A[t, ] = ancestors
     X_updated = X_updated[, ancestors]
     X_updated[t, ] = xparticles
+    filtering_means[t] <- sum(W[t, ] * X_updated[t,])
   }
+  marginal.ll <- prod(rowMeans(W))
   # perhaps not necessary to return everything
-  return(list("X" = X, "W" = W, "A" = A, "X_updated" = X_updated))
+  return(list("X" = X, "W" = W[nrow(W),], "A" = A[-1,], "X_updated" = X_updated, "Marginal.LL" = marginal.ll))
 }
 
 
 # toy example
 
-rmu <- function(n) rnorm(n, mean = 0, sd = 1)
+rmu <- function(n) rnorm(n, mean = 0, sd = 5)
 rf <- function(x) rnorm(length(x), mean = x, sd = 1)
 dg <- function(x,y) dnorm(y, mean = x, sd = 1)
 
 # note that at the first time point, x is generated from N(0, 1) and 
 # only these values are kept which are close to y[1] = 2
-SMC(N = 5, y = c(2, 2.5, 3), dg, rf, rmu)
+
+s <- SMC(N = 5, y = c(2, 2.5, 3, 3), dg, rf, rmu)
+
+lineage <- function(A) {
+B <- matrix(0, nrow =  nrow(A)+1, ncol = ncol(A))
+B[nrow(B),] <- seq(1,ncol(B))
+for(n in 1:nrow(B)) {
+  for(k in 1:ncol(B)) {
+    B[nrow(B)-n,k] <- A[nrow(A)+1-n, B[nrow(B)+1-n,k]]
+    
+  }
+}
+B
+}
+
+
+
+
+
