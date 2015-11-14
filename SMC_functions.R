@@ -34,7 +34,7 @@ SMC = function(N, y, dg, rf, rmu=rf){
     # indexes from multinomial resampling (note: no need to normalise weights here)
     ancestors <- sample(N, replace=TRUE, prob=weights)
     # sample the next particles x_t, given the previous ones x_{t-1} after the resampling step
-    xparticles <- rf(xparticles[ancestors])
+    xparticles <- rf(xparticles[ancestors], t)
     # compute weights for the latter
     weights <- dg(xparticles, y[t])
     
@@ -54,7 +54,7 @@ SMC = function(N, y, dg, rf, rmu=rf){
 # toy example
 
 rmu <- function(n) rnorm(n, mean = 0, sd = 5)
-rf <- function(x) rnorm(length(x), mean = x, sd = 1)
+rf <- function(x, t) rnorm(length(x), mean = x, sd = 1)
 dg <- function(x,y) dnorm(y, mean = x, sd = 1)
 
 # note that at the first time point, x is generated from N(0, 1) and 
