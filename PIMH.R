@@ -63,9 +63,9 @@ SMC_EK = function(N, y, dg, rf, rmu=rf){
     X_updated[t, ] = xparticles
     filtering_means[t] <- sum(W[t, ]/sum(W[t,]) * X_updated[t,])
   }
-  marginal.l <- exp(sum(log(rowMeans(W))))
+  marginal.ll <- sum(log(rowMeans(W)))
   # perhaps not necessary to return everything
-  return(list("X" = X, "W" = W[nrow(W),], "A" = A[-1,], "X_updated" = X_updated, "Marginal.L" = marginal.l))
+  return(list("X" = X, "W" = W[nrow(W),], "A" = A[-1,], "X_updated" = X_updated, "Marginal.LL" = marginal.ll))
 }
 
 
@@ -78,7 +78,7 @@ PIMH <- function(N, y, dg, rf, rmu=rf, iters) {
   s <- SMC_EK(N, y, dg, rf, rmu)
   index <- sample(1:N, size = 1, prob = s$W)
   x.star <- s$X_updated[,index]
-  marginal.ll[1] <- log(s$Marginal.L)
+  marginal.ll[1] <- s$Marginal.LL
   chain[1,] <- x.star
   
   # step 2
@@ -86,8 +86,8 @@ PIMH <- function(N, y, dg, rf, rmu=rf, iters) {
     s <- SMC_EK(N, y, dg, rf, rmu)
     index <- sample(1:N, size = 1, prob = s$W)
     x.star <- s$X_updated[,index]
-    p.star <- log(s$Marginal.L)
-    a <- min(1, p.star/marginal.ll[i])
+    p.star <- s$Marginal.LL
+    a <- min(1, exp(p.star)/exp(marginal.ll[i]))
     u <- runif(1)
     
     if (u <= a) {
@@ -106,8 +106,8 @@ PIMH <- function(N, y, dg, rf, rmu=rf, iters) {
 }
 
 ## Example on page 280
-sv = 10
-sw = 10
+sv = sqrt(10)
+sw = sqrt(10)
 rmu <- function(n) rnorm(n, mean = 0, sd = sqrt(5))
 rf <- function(x, t) rnorm(length(x), mean = 0.5*x + 25*x/(1+x**2) + 8*cos(1.2*t), sd = sv)
 dg <- function(x,y) dnorm(y, mean = 0.05*x^2, sd = sw, log = TRUE)
@@ -116,11 +116,12 @@ set.seed(0)
 data <- generate_model2(100, sv = sv, sw = sw)
 #s <- SMC_EK(5, data$Y, dg, rf, rmu)
 
-system.time(pimh <- PIMH(N = 200, y = data$Y, dg, rf, rmu, iters = 10000))
+system.time(pimh <- PIMH(N = 200, y = data$Y, dg, rf, rmu, iters = 1000))
 # 3 sec: 100 data, N = 200, iters = 100
 # 30 sec: 100 data, N = 200, iters = 1000
 # 300 sec: 100 data, N = 200, iters = 10000
 pimh$marginal.ll
+pimh$accept
 
 pimh2 <- PIMH(N = 200, y = data$Y, dg, rf, rmu, iters = 1000)
 pimh2$accept # 0.997, but in paper it's c0.45
