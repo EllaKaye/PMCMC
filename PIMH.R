@@ -65,7 +65,7 @@ SMC_EK = function(N, y, dg, rf, rmu=rf){
   }
   marginal.ll <- sum(log(rowMeans(W)))
   # perhaps not necessary to return everything
-  return(list("X" = X, "W" = W[nrow(W),], "A" = A[-1,], "X_updated" = X_updated, "Marginal.LL" = marginal.ll))
+  return(list("X" = X, "W" = W[nrow(W),], "A" = A[-1,], "X_updated" = X_updated, "Marginal.LL" = marginal.ll, means = filtering_means))
 }
 
 
@@ -73,6 +73,7 @@ PIMH <- function(N, y, dg, rf, rmu=rf, iters) {
   chain <- matrix(NA, iters+1, length(y))
   marginal.ll <- numeric(iters+1)
   accept <- 0
+  filtering_means <- matrix(NA, iters+1, length(y))
   
   # step 1 (i = 0)
   s <- SMC_EK(N, y, dg, rf, rmu)
@@ -80,6 +81,7 @@ PIMH <- function(N, y, dg, rf, rmu=rf, iters) {
   x.star <- s$X_updated[,index]
   marginal.ll[1] <- s$Marginal.LL
   chain[1,] <- x.star
+  filtering_means[1,] <- s$means
   
   # step 2
   for (i in 1:iters) {
@@ -93,16 +95,18 @@ PIMH <- function(N, y, dg, rf, rmu=rf, iters) {
     if (u <= a) {
       chain[i+1,] <- x.star
       marginal.ll[i+1] <- p.star
+      filtering_means[i+1,] <- s$means
       accept <- accept + 1
     }
     else {
       chain[i+1,] <- chain[i,]
       marginal.ll[i+1] <- marginal.ll[i]
+      filtering_means[i+1,] <- filtering_means[i,]
     }
   }
   
   accept_prob <- accept/iters
-  return(list(chain = chain, marginal.ll = marginal.ll, accept = accept_prob))
+  return(list(chain = chain, marginal.ll = marginal.ll, accept = accept_prob, means = filtering_means))
 }
 
 ## Example on page 280
@@ -114,7 +118,8 @@ dg <- function(x,y) dnorm(y, mean = 0.05*x^2, sd = sw, log = TRUE)
 
 set.seed(0)
 data <- generate_model2(100, sv = sv, sw = sw)
-#s <- SMC_EK(5, data$Y, dg, rf, rmu)
+s <- SMC_EK(200, data$Y, dg, rf, rmu)
+s$means
 
 system.time(pimh <- PIMH(N = 200, y = data$Y, dg, rf, rmu, iters = 1000))
 # 3 sec: 100 data, N = 200, iters = 100
@@ -124,4 +129,4 @@ pimh$marginal.ll
 pimh$accept
 
 pimh2 <- PIMH(N = 200, y = data$Y, dg, rf, rmu, iters = 1000)
-pimh2$accept # 0.997, but in paper it's c0.45
+dim(pimh2$means)
