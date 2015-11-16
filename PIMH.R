@@ -90,7 +90,7 @@ PIMH <- function(N, y, dg, rf, rmu=rf, iters) {
     index <- sample(1:N, size = 1, prob = s$W)
     x.star <- s$X_updated[,index]
     p.star <- s$Marginal.LL
-    a <- min(1, exp(p.star)/exp(marginal.ll[i]))
+    a <- min(1, exp(p.star - marginal.ll[i]))
 
     if (u[i] <= a) {
       chain[i+1,] <- x.star
