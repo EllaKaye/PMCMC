@@ -20,8 +20,8 @@ PMMH <- function(N, y, dg_gen, rf_gen, rmu=rf, iters) {
   # step 2
   for (i in 1:iters) {
     theta[i+1,] <- mvrnorm(1, mu = theta[i,], Sigma = diag(c(0.15^2, 0.08^2)))
-    rf <- rf_gen(theta[i+1,1])
-    dg <- dg_gen(theta[i+1,2])
+    rf <- rf_gen(abs(theta[i+1,1]))
+    dg <- dg_gen(abs(theta[i+1,2]))
     s <- SMC_EK(N, y, dg, rf, rmu)
     index <- sample(1:N, size = 1, prob = s$W)
     x.star <- s$X_updated[,index]
@@ -61,7 +61,7 @@ dg_gen <- function(sw) {
 
 
 
-p <- PMMH(N = 500, y = data$Y, dg_gen, rf_gen, rmu, iters = 100)
+p <- PMMH(N = 500, y = data$Y, dg_gen, rf_gen, rmu, iters = 1000)
 
 N = 200
 y = data$Y
