@@ -3,10 +3,6 @@ sourceCpp("SMC_fast.cpp")
 SMC_cpp(200, y = c(2, 2.5 ,3 ,3), 10, 10)
 
 
-MarginalLL <- function(W) {
- sum(log(rowMeans(W)))  
-}
-
 PIMH_fast <- function(N, y, sv, sw, iters) {
   chain <- matrix(NA, iters+1, length(y))
   marginal.ll <- numeric(iters+1)
@@ -15,17 +11,17 @@ PIMH_fast <- function(N, y, sv, sw, iters) {
 
   # step 1 (i = 0)
   s <- SMC_cpp(N, y, sv, sw)
-  index <- sample(1:N, size = 1, prob = s$W[nrow(s$W),])
+  index <- sample(1:N, size = 1, prob = s$final_weights)
   x.star <- s$X_updated[,index]
-  marginal.ll[1] <- MarginalLL(s$W)
+  marginal.ll[1] <- s$marginal.LL
   chain[1,] <- x.star
 
   # step 2
   for (i in 1:iters) {
     s <- SMC_cpp(N, y, sv, sw)
-    index <- sample(1:N, size = 1, prob = s$W[nrow(s$W),])
+    index <- sample(1:N, size = 1, prob = s$final_weights)
     x.star <- s$X_updated[,index]
-    p.star <- MarginalLL(s$W)
+    p.star <- s$marginal.LL
     #a <- min(1, exp(p.star)/exp(marginal.ll[i]))
     
     if (u[i] <= exp(p.star-marginal.ll[i])) {
