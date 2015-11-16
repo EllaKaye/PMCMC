@@ -74,6 +74,7 @@ PIMH <- function(N, y, dg, rf, rmu=rf, iters) {
   marginal.ll <- numeric(iters+1)
   accept <- 0
   filtering_means <- matrix(NA, iters+1, length(y))
+  u <- runif(iters)
   
   # step 1 (i = 0)
   s <- SMC_EK(N, y, dg, rf, rmu)
@@ -90,9 +91,8 @@ PIMH <- function(N, y, dg, rf, rmu=rf, iters) {
     x.star <- s$X_updated[,index]
     p.star <- s$Marginal.LL
     a <- min(1, exp(p.star)/exp(marginal.ll[i]))
-    u <- runif(1)
-    
-    if (u <= a) {
+
+    if (u[i] <= a) {
       chain[i+1,] <- x.star
       marginal.ll[i+1] <- p.star
       filtering_means[i+1,] <- s$means
