@@ -22,6 +22,7 @@ List SMC_cpp(int N, NumericVector y, double sv, double sw) {
   NumericVector prevx(N);
   NumericVector logweights(N);
   NumericVector weights(N);
+  NumericVector weights_shifted(N);
   NumericVector ancestors(N);
   NumericVector noise(N);
   NumericVector W_rowsums(N);
@@ -36,13 +37,13 @@ List SMC_cpp(int N, NumericVector y, double sv, double sw) {
   for(int i=0; i<N; i++){
     xsq[i] = pow(x[i], 2);
     logweights[i] = R::dnorm(y[0], 0.05*xsq[i], sw, 1);
-    W_rowsums[0] += exp(logweights[i] - maxlogweight);
   }
   
   maxlogweight = max(logweights); 
   for(int i=0; i<N; i++){
-    weights[i] = exp(logweights[i] - maxlogweight) + 1.0e-50; 
-    W_rowsums[0] += exp(logweights[i]);
+    weights[i] = exp(logweights[i]); 
+    weights_shifted[i] = exp(logweights[i] - maxlogweight) + 1.0e-15; 
+    W_rowsums[0] += weights[i];
     filtering_means_unnormalised[0] += weights[i] * x[i];
   }
   
@@ -53,7 +54,7 @@ List SMC_cpp(int N, NumericVector y, double sv, double sw) {
   A(0, _) = seq_len(N);
   
   for(int t=1; t<T; t++){
-    ancestors = RcppArmadillo::sample(seq_one_to_N, N, true, weights);
+    ancestors = RcppArmadillo::sample(seq_one_to_N, N, true, weights_shifted);
     
     // update previous x values according to their ancestors
     // essentially prevx <- x
@@ -72,7 +73,7 @@ List SMC_cpp(int N, NumericVector y, double sv, double sw) {
     // sample new x values
     noise = rnorm(N, 0, sv);
     for(int i=0; i<N; i++){
-      x[i] = 0.5*x[i] + 25*x[i]/(1+pow(x[i], 2)) + 8*cos(1.2*(t+1));
+      x[i] = 0.5*x[i] + 25*x[i]/(1+pow(x[i], 2)) + 8*cos(1.2*(t+1)) + noise[i];
       xsq[i] = pow(x[i], 2);
       logweights[i] = R::dnorm(y[t], 0.05*xsq[i], sw, 1);
     }
@@ -81,8 +82,9 @@ List SMC_cpp(int N, NumericVector y, double sv, double sw) {
     // shift logweights before taking exponential
     maxlogweight = max(logweights); 
     for(int i=0; i<N; i++){
-      weights[i] = exp(logweights[i] - maxlogweight) + 1.0e-50; 
-      W_rowsums[t] += exp(logweights[i]);
+      weights[i] = exp(logweights[i]); 
+      weights_shifted[i] = exp(logweights[i] - maxlogweight) + 1.0e-15; 
+      W_rowsums[t] += weights[i];
       filtering_means_unnormalised[t] += weights[i] * x[i];
     }
     
