@@ -42,7 +42,7 @@ List SMC_cpp(int N, NumericVector y, double sv, double sw) {
   maxlogweight = max(logweights); 
   for(int i=0; i<N; i++){
     weights[i] = exp(logweights[i] - maxlogweight) + 1.0e-50; 
-    W_rowsums[0] += weights[i];
+    W_rowsums[0] += exp(logweights[i]);
     filtering_means_unnormalised[0] += weights[i] * x[i];
   }
   
@@ -82,7 +82,7 @@ List SMC_cpp(int N, NumericVector y, double sv, double sw) {
     maxlogweight = max(logweights); 
     for(int i=0; i<N; i++){
       weights[i] = exp(logweights[i] - maxlogweight) + 1.0e-50; 
-      W_rowsums[t] += weights[i];
+      W_rowsums[t] += exp(logweights[i]);
       filtering_means_unnormalised[t] += weights[i] * x[i];
     }
     
