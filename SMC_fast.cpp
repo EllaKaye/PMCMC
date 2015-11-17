@@ -25,8 +25,8 @@ List SMC_cpp(int N, NumericVector y, double sv, double sw) {
   NumericVector weights_shifted(N);
   NumericVector ancestors(N);
   NumericVector noise(N);
-  NumericVector W_rowsums(N);
-  NumericVector W_rowmeans(N);
+  NumericVector W_rowsums(T);
+  NumericVector W_rowmeans(T);
   NumericVector filtering_means_unnormalised(T);
   NumericVector filtering_means(T);
   double loglikelihood = 0.0;
